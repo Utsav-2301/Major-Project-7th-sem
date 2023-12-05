@@ -1,9 +1,15 @@
 from flask import Flask, request, jsonify, send_file
 from flask_socketio import SocketIO
 from threading import Lock, Event
+from flask_cors import CORS
 import random
 import csv
+import pyvisa
 
+
+rm = pyvisa.ResourceManager()
+keithley_resource_name = 'TCPIP0::169.254.56.27::inst0::INSTR'  # Replace with your instrument's resource name
+keithley = rm.open_resource(keithley_resource_name)
 thread = None
 voltage = 0
 current = 0
@@ -14,6 +20,7 @@ thread_lock = Lock()
 plot_event = Event()
 
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 
@@ -36,9 +43,18 @@ def receive_data():
         elif source_type == 'current':
             current_value = int(source_value) 
             current = current_value
-
+        print(voltage_value)
         Plot_Graph = bool(plt_graph)
-
+        keithley.write(':ROUT:TERM REAR')
+        keithley.write(':SOUR:FUNC VOLT')
+        keithley.write(f':SOUR:VOLT {voltage_value}')
+        keithley.write(':SOUR:VOLT:ILIM 0.01')
+        keithley.write(':SENS:FUNC "CURR"')
+        keithley.write(':SENS:CURR:RANG:AUTO ON')
+        keithley.write(':SENSE:CURR:UNIT AMP')
+        keithley.write(':OUTP ON')
+        keithley.write(':INIT')
+        keithley.write('*WAI')
         # Signal the background thread that the value is updated
         plot_event.set()
 
@@ -54,9 +70,12 @@ def background_thread():
             plot = Plot_Graph
 
         if plot:
-            measured_value = random.uniform(0,10)
-            measured_values.append(measured_value)
-            socketio.emit('updateSensorData', {'value': measured_value})
+            try:
+                current = float(keithley.query(':READ?').strip()) * 1e6
+                socketio.emit('updateSensorData', {'value': current})
+            except Exception as e:
+                print(f'Error reading current: {str(e)}')
+
             socketio.sleep(1)
         else:
             socketio.sleep(1)
