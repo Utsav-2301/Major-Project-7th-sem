@@ -102,7 +102,7 @@ const ChartComponent = ({ measurementType }) => {
 
   return (
     <div>
-      <canvas ref={chartRef} id="chart2" width="400" height="250"></canvas>
+      <canvas ref={chartRef} id="chart2" width="600" height="250"></canvas>
     </div>
   );
 };

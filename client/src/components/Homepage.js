@@ -25,7 +25,9 @@ const theme = createTheme({
 const HomePage = () => {
   const [sourceType, setSourceType] = useState("voltage");
   const [sourceValue, setSourceValue] = useState("");
+  const [ipAddress, setIpAdress] = useState("");
   const [chartVisible, setChartVisible] = useState(false);
+  const [showSelectOptions, setShowSelectOptions] = useState(false);
   const [measurementTypeOptions, setMeasurementTypeOptions] = useState([
     { value: "current", label: "Current" },
     { value: "resistance", label: "Resistance" },
@@ -65,6 +67,29 @@ const HomePage = () => {
     }
   };
 
+const connectKeihtley = ()=>{
+  fetch("/connect", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ip_address: ipAddress,
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log(data);
+      setShowSelectOptions(true);
+    })
+    .catch((error) => console.error("Error:", error));
+}
+
 const sendData = () => {
   fetch("/receive-data", {
     method: "POST",
@@ -85,13 +110,11 @@ const sendData = () => {
       return response.json();
     })
     .then((data) => {
+      console.log(data)
       setChartVisible(true);
-      updateChartConfiguration(data.measured_value);
     })
     .catch((error) => console.error("Error:", error));
 };
-
-
 
   const downloadData = () => {
     fetch("/download-data")
@@ -107,11 +130,6 @@ const sendData = () => {
       .catch((error) => console.error("Error:", error));
   };
 
-  const updateChartConfiguration = (measurementType) => {
-    // Implement chart configuration logic here
-    // Note: Access chart instance and update options as needed
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="md" style={{ paddingTop: "50px" }}>
@@ -121,80 +139,96 @@ const sendData = () => {
 
         <Card style={{ padding: "20px" }}>
           <CardContent>
-            <form id="myForm">
-              <FormControl fullWidth>
-                <InputLabel id="source-type-label">
-                  Select Source Type
-                </InputLabel>
-                <Select
-                  labelId="source-type-label"
-                  id="source_type"
-                  value={sourceType}
-                  label="Select Source Type"
-                  onChange={(e) => {
-                    setSourceType(e.target.value);
-                  }}
-                >
-                  <MenuItem value="voltage">Voltage</MenuItem>
-                  <MenuItem value="current">Current</MenuItem>
-                </Select>
-              </FormControl>
-              <br />
-              <br />
+            <TextField
+              id="ip_address"
+              label="Enter IP Address of Keithley"
+              type="number"
+              value={ipAddress}
+              fullWidth
+              placeholder=""
+              onChange={(e) => setIpAdress(e.target.value)}
+            />
+            <br />
+            <br />
+            <CustomButton
+              text="Connect with Keithley"
+              handleClick={() => connectKeihtley()}
+              disabled={!ipAddress}
+            />
 
-              <TextField
-                id="source_value"
-                label={sourceLabel}
-                type="number"
-                value={sourceValue}
-                fullWidth
-                placeholder={sourcePlaceholder}
-                onChange={(e) => setSourceValue(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      {sourceType === "voltage" && "V (in volts)"}
-                      {sourceType === "current" && "mA (in milliamps)"}
-                    </InputAdornment>
-                  ),
+{showSelectOptions && <><FormControl fullWidth>
+              <InputLabel id="source-type-label">Select Source Type</InputLabel>
+              <Select
+                labelId="source-type-label"
+                id="source_type"
+                value={sourceType}
+                label="Select Source Type"
+                onChange={(e) => {
+                  setSourceType(e.target.value);
                 }}
-              />
+              >
+                <MenuItem value="voltage">Voltage</MenuItem>
+                <MenuItem value="current">Current</MenuItem>
+              </Select>
+            </FormControl>
+            <br />
+            <br />
 
-              <br />
-              <br />
+            <TextField
+              id="source_value"
+              label={sourceLabel}
+              type="number"
+              value={sourceValue}
+              fullWidth
+              placeholder={sourcePlaceholder}
+              onChange={(e) => setSourceValue(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {sourceType === "voltage" && "V (in volts)"}
+                    {sourceType === "current" && "mA (in milliamps)"}
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-              <FormControl fullWidth>
-                <InputLabel id="measurement-type-label">
-                  Select Measurement
-                </InputLabel>
-                <Select
-                  labelId="measurement-type-label"
-                  id="measurement_type"
-                  value={measurementType}
-                  label="Select Measurement"
-                  onChange={(e) => setMeasurementType(e.target.value)}
-                >
-                  {measurementTypeOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <br />
-              <br />
+            <br />
+            <br />
 
-              <CustomButton
-                text="Plot Graph"
-                handleClick={() => sendData()}
-                disabled={false}
-              />
-              {/* <CustomButton
+            <FormControl fullWidth>
+              <InputLabel id="measurement-type-label">
+                Select Measurement
+              </InputLabel>
+              <Select
+                labelId="measurement-type-label"
+                id="measurement_type"
+                value={measurementType}
+                label="Select Measurement"
+                onChange={(e) => setMeasurementType(e.target.value)}
+              >
+                {measurementTypeOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <br />
+            <br />
+
+            <CustomButton
+              text="Plot Graph"
+              handleClick={() => sendData()}
+              disabled={!sourceValue}
+            />
+            </>
+            }
+            
+            {/* <CustomButton
                 text="Download Data"
                 handleClick={() => downloadData()}
                 disabled={false}
               /> */}
-            </form>
           </CardContent>
         </Card>
         {chartVisible && <ChartComponent measurementType={measurementType} />}

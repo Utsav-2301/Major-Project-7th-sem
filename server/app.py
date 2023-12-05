@@ -3,6 +3,11 @@ from flask_socketio import SocketIO
 from threading import Lock, Event
 import random
 import csv
+import numpy as np
+import pandas as pd
+import random
+import pyvisa
+from datetime import datetime
 
 thread = None
 voltage = 0
@@ -15,6 +20,24 @@ plot_event = Event()
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
+
+# @app.route('/connect', methods=['POST'])
+# def connect_keithley():
+#     print('connection request received')
+#     try:
+#         print('trying to make post request')
+#         data = request.get_json()
+#         ip_address = data.get('ip_address')
+
+#         ##TO ADD: keithley ip connection script 
+#         rm = pyvisa.ResourceManager()
+#         keithley_resource_name = 'TCPIP0::169.254.127.0::inst0::INSTR'  # Replace with your instrument's resource name
+#         keithley = rm.open_resource(keithley_resource_name)
+
+#         return jsonify({'IP Connection Successfully done'})
+#     except Exception as e:
+#         print(f'Error: {str(e)}')
+#         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/receive-data', methods=['POST'])
