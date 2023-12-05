@@ -66,29 +66,29 @@ const HomePage = () => {
   };
 
 const sendData = () => {
-  fetch("/receive-data", {
-    method: "POST",
+  fetch('http://localhost:5000/receive-data', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       source_type: sourceType,
       source_value: sourceValue,
       measurement_type: measurementType,
-      plot_graph: "True",
+      plot_graph: 'True',
     }),
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`)
       }
-      return response.json();
+      return response.json()
     })
     .then((data) => {
-      setChartVisible(true);
-      updateChartConfiguration(data.measured_value);
+      setChartVisible(true)
+      updateChartConfiguration(data.measured_value)
     })
-    .catch((error) => console.error("Error:", error));
+    .catch((error) => console.error('Error:', error))
 };
 
 
