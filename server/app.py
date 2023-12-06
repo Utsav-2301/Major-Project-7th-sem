@@ -2,11 +2,7 @@ from flask import Flask, request, jsonify, send_file
 from flask_socketio import SocketIO
 from threading import Lock, Event
 from flask_cors import CORS
-import random
 import csv
-import numpy as np
-import pandas as pd
-import random
 import pyvisa
 from datetime import datetime
 
@@ -45,11 +41,9 @@ def connect_keithley():
         print(f'Error: {str(e)}')
         return jsonify({'error': str(e)}), 500
     finally:
-        # Close resources in the finally block
         if 'keithley' in locals():
             keithley.close()
             rm.close()
-
 
 @app.route('/receive-data', methods=['POST'])
 def receive_data():
@@ -116,6 +110,25 @@ def background_thread():
             socketio.sleep(1)
         else:
             socketio.sleep(1)
+@app.route('/disconnect-keithley', methods=['POST'])
+def disconnect_keithley():
+    global keithley
+    global rm
+    try:
+        if 'keithley' in globals():
+            keithley.close()
+            rm.close()
+        return {'message': 'Disconnected successfully'}
+    except Exception as e:
+        return {'error': str(e)}
+
+@app.route('/stop-plotting', methods=['POST'])
+def stop_websocket():
+    try:
+        socketio.stop()
+        return jsonify({'message': 'WebSocket connection stopped successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/download-data', methods=['GET'])
 def download_data():

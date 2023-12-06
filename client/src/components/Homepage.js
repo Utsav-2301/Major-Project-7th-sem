@@ -120,6 +120,46 @@ const HomePage = () => {
       .catch((error) => console.error("Error:", error));
   };
 
+  const newConnection = ()=>{
+    fetch("http://localhost:5000/disconnect-keithley", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      }
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Error disconnecting and starting a new plot');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        setShowSelectOptions(false);
+        setChartVisible(false);
+      })
+      .catch((error) => console.error("Error:", error));
+  }
+
+  const stopPlotting = () =>{
+    fetch("http://localhost:5000/stop-plotting", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error closing the connection");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((error) => console.error("Error:", error));
+  }
+
   const downloadData = () => {
     fetch("/download-data")
       .then((response) => response.blob())
@@ -277,14 +317,23 @@ const HomePage = () => {
                 />
               </>
             )}
-
-            {/* <CustomButton
-                text="Download Data"
-                handleClick={() => downloadData()}
-                disabled={false}
-              /> */}
           </CardContent>
         </Card>
+        <CustomButton
+          text="Start a new plot"
+          handleClick={() => newConnection()}
+          disabled={false}
+        />
+        <CustomButton
+          text="Stop Plotting"
+          handleClick={() => stopPlotting()}
+          disabled={false}
+        />
+        <CustomButton
+          text="Download Data"
+          handleClick={() => downloadData()}
+          disabled={false}
+        />
         {chartVisible && <ChartComponent measurementType={measurementType} />}
       </Container>
     </ThemeProvider>
