@@ -67,54 +67,54 @@ const HomePage = () => {
     }
   };
 
-const connectKeihtley = ()=>{
-  fetch("/connect", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ip_address: ipAddress,
-    }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return response.json();
+  const connectKeihtley = () => {
+    fetch("/connect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ip_address: ipAddress,
+      }),
     })
-    .then((data) => {
-      console.log(data);
-      setShowSelectOptions(true);
-    })
-    .catch((error) => console.error("Error:", error));
-}
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        setShowSelectOptions(true);
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
-const sendData = () => {
-  fetch("/receive-data", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      source_type: sourceType,
-      source_value: sourceValue,
-      measurement_type: measurementType,
-      plot_graph: "True",
-    }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return response.json();
+  const sendData = () => {
+    fetch("/receive-data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_type: sourceType,
+        source_value: sourceValue,
+        measurement_type: measurementType,
+        plot_graph: "True",
+      }),
     })
-    .then((data) => {
-      console.log(data)
-      setChartVisible(true);
-    })
-    .catch((error) => console.error("Error:", error));
-};
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        setChartVisible(true);
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
   const downloadData = () => {
     fetch("/download-data")
@@ -142,7 +142,7 @@ const sendData = () => {
             <TextField
               id="ip_address"
               label="Enter IP Address of Keithley"
-              type="number"
+              type="text"
               value={ipAddress}
               fullWidth
               placeholder=""
@@ -156,74 +156,78 @@ const sendData = () => {
               disabled={!ipAddress}
             />
 
-{showSelectOptions && <><FormControl fullWidth>
-              <InputLabel id="source-type-label">Select Source Type</InputLabel>
-              <Select
-                labelId="source-type-label"
-                id="source_type"
-                value={sourceType}
-                label="Select Source Type"
-                onChange={(e) => {
-                  setSourceType(e.target.value);
-                }}
-              >
-                <MenuItem value="voltage">Voltage</MenuItem>
-                <MenuItem value="current">Current</MenuItem>
-              </Select>
-            </FormControl>
-            <br />
-            <br />
+            {showSelectOptions && (
+              <>
+                <FormControl fullWidth>
+                  <InputLabel id="source-type-label">
+                    Select Source Type
+                  </InputLabel>
+                  <Select
+                    labelId="source-type-label"
+                    id="source_type"
+                    value={sourceType}
+                    label="Select Source Type"
+                    onChange={(e) => {
+                      setSourceType(e.target.value);
+                    }}
+                  >
+                    <MenuItem value="voltage">Voltage</MenuItem>
+                    <MenuItem value="current">Current</MenuItem>
+                  </Select>
+                </FormControl>
+                <br />
+                <br />
 
-            <TextField
-              id="source_value"
-              label={sourceLabel}
-              type="number"
-              value={sourceValue}
-              fullWidth
-              placeholder={sourcePlaceholder}
-              onChange={(e) => setSourceValue(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {sourceType === "voltage" && "V (in volts)"}
-                    {sourceType === "current" && "mA (in milliamps)"}
-                  </InputAdornment>
-                ),
-              }}
-            />
+                <TextField
+                  id="source_value"
+                  label={sourceLabel}
+                  type="number"
+                  value={sourceValue}
+                  fullWidth
+                  placeholder={sourcePlaceholder}
+                  onChange={(e) => setSourceValue(e.target.value)}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {sourceType === "voltage" && "V (in volts)"}
+                        {sourceType === "current" && "mA (in milliamps)"}
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-            <br />
-            <br />
+                <br />
+                <br />
 
-            <FormControl fullWidth>
-              <InputLabel id="measurement-type-label">
-                Select Measurement
-              </InputLabel>
-              <Select
-                labelId="measurement-type-label"
-                id="measurement_type"
-                value={measurementType}
-                label="Select Measurement"
-                onChange={(e) => setMeasurementType(e.target.value)}
-              >
-                {measurementTypeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <br />
-            <br />
+                <FormControl fullWidth>
+                  <InputLabel id="measurement-type-label">
+                    Select Measurement
+                  </InputLabel>
+                  <Select
+                    labelId="measurement-type-label"
+                    id="measurement_type"
+                    value={measurementType}
+                    label="Select Measurement"
+                    onChange={(e) => setMeasurementType(e.target.value)}
+                  >
+                    {measurementTypeOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <br />
+                <br />
 
-            <CustomButton
-              text="Plot Graph"
-              handleClick={() => sendData()}
-              disabled={!sourceValue}
-            />
-            </>
-            }
-            
+                <CustomButton
+                  text="Plot Graph"
+                  handleClick={() => sendData()}
+                  disabled={!sourceValue}
+                />
+              </>
+            )}
+
             {/* <CustomButton
                 text="Download Data"
                 handleClick={() => downloadData()}
