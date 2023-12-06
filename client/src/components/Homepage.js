@@ -24,10 +24,12 @@ const theme = createTheme({
 
 const HomePage = () => {
   const [sourceType, setSourceType] = useState("voltage");
+  const [connectionType, setConnectionType] = useState("rear");
   const [sourceValue, setSourceValue] = useState("");
   const [ipAddress, setIpAdress] = useState("");
   const [chartVisible, setChartVisible] = useState(false);
   const [showSelectOptions, setShowSelectOptions] = useState(false);
+  const [maxCurrentLimit, setMaxCurrentLimit] = useState("");
   const [measurementTypeOptions, setMeasurementTypeOptions] = useState([
     { value: "current", label: "Current" },
     { value: "resistance", label: "Resistance" },
@@ -68,7 +70,7 @@ const HomePage = () => {
   };
 
   const connectKeihtley = () => {
-    fetch("/connect", {
+    fetch("http://localhost:5000/connect", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -91,15 +93,17 @@ const HomePage = () => {
   };
 
   const sendData = () => {
-    fetch("/receive-data", {
+    fetch("http://localhost:5000/receive-data", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        connection_type: connectionType,
         source_type: sourceType,
         source_value: sourceValue,
         measurement_type: measurementType,
+        max_current_limit: maxCurrentLimit,
         plot_graph: "True",
       }),
     })
@@ -139,25 +143,51 @@ const HomePage = () => {
 
         <Card style={{ padding: "20px" }}>
           <CardContent>
-            <TextField
-              id="ip_address"
-              label="Enter IP Address of Keithley"
-              type="text"
-              value={ipAddress}
-              fullWidth
-              placeholder=""
-              onChange={(e) => setIpAdress(e.target.value)}
-            />
-            <br />
-            <br />
-            <CustomButton
-              text="Connect with Keithley"
-              handleClick={() => connectKeihtley()}
-              disabled={!ipAddress}
-            />
+            {!showSelectOptions && (
+              <>
+                <TextField
+                  id="ip_address"
+                  label="Enter IP Address of Keithley"
+                  type="text"
+                  value={ipAddress}
+                  fullWidth
+                  placeholder=""
+                  onChange={(e) => setIpAdress(e.target.value)}
+                />
+                <br />
+                <br />
+                <CustomButton
+                  text="Connect with Keithley"
+                  handleClick={() => connectKeihtley()}
+                  disabled={!ipAddress}
+                />
+              </>
+            )}
 
             {showSelectOptions && (
               <>
+                <Typography variant="caption">
+                  Connected with Keithley
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel id="connection-type-label">
+                    Select Connection Type
+                  </InputLabel>
+                  <Select
+                    labelId="connection-type-label"
+                    id="connection_type"
+                    value={connectionType}
+                    label="Select Connection Type"
+                    onChange={(e) => {
+                      setConnectionType(e.target.value);
+                    }}
+                  >
+                    <MenuItem value="rear">Rear</MenuItem>
+                    <MenuItem value="front">Front</MenuItem>
+                  </Select>
+                </FormControl>
+                <br />
+                <br />
                 <FormControl fullWidth>
                   <InputLabel id="source-type-label">
                     Select Source Type
@@ -217,6 +247,26 @@ const HomePage = () => {
                     ))}
                   </Select>
                 </FormControl>
+                <br />
+                <br />
+
+                <TextField
+                  id="max_current_limit"
+                  label={"Max Current Limit"}
+                  type="number"
+                  value={maxCurrentLimit}
+                  fullWidth
+                  placeholder={"Set Max Current Limit"}
+                  onChange={(e) => setMaxCurrentLimit(e.target.value)}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {sourceType === "current" && "A (in amps)"}
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
                 <br />
                 <br />
 

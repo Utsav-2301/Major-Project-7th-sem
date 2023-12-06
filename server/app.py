@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_socketio import SocketIO
 from threading import Lock, Event
+from flask_cors import CORS
 import random
 import csv
 import numpy as np
@@ -8,6 +9,8 @@ import pandas as pd
 import random
 import pyvisa
 from datetime import datetime
+
+keithley = None
 
 thread = None
 voltage = 0
@@ -19,25 +22,33 @@ thread_lock = Lock()
 plot_event = Event()
 
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
-# @app.route('/connect', methods=['POST'])
-# def connect_keithley():
-#     print('connection request received')
-#     try:
-#         print('trying to make post request')
-#         data = request.get_json()
-#         ip_address = data.get('ip_address')
-
-#         ##TO ADD: keithley ip connection script 
-#         rm = pyvisa.ResourceManager()
-#         keithley_resource_name = 'TCPIP0::169.254.127.0::inst0::INSTR'  # Replace with your instrument's resource name
-#         keithley = rm.open_resource(keithley_resource_name)
-
-#         return jsonify({'IP Connection Successfully done'})
-#     except Exception as e:
-#         print(f'Error: {str(e)}')
-#         return jsonify({'error': str(e)}), 500
+@app.route('/connect', methods=['POST'])
+def connect_keithley():
+    global keithley
+    print('Connection request received')
+    try:
+        print('Trying to make post request')
+        data = request.get_json()
+        ip_address = data.get('ip_address')
+        print(ip_address,'\n')
+        ## TO ADD: Keithley IP connection script 
+        rm = pyvisa.ResourceManager()
+        keithley_resource_name = f'TCPIP0::{ip_address}::inst0::INSTR'
+        global keithley
+        keithley = rm.open_resource(keithley_resource_name)
+        print(keithley)
+        return jsonify({'message': 'IP Connection successfully done'})
+    except Exception as e:
+        print(f'Error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Close resources in the finally block
+        if 'keithley' in locals():
+            keithley.close()
+            rm.close()
 
 
 @app.route('/receive-data', methods=['POST'])
@@ -46,22 +57,37 @@ def receive_data():
     try:
         print('trying to make post request')
         data = request.get_json()
+        connection_type = data.get('connection_type')
         source_type = data.get('source_type')
         source_value = data.get('source_value')
         measurement_type = data.get('measurement_type')
+        max_current_limit = data.get('max_current_limit')
         plt_graph = data.get('plot_graph')
 
         global voltage, current, resistance, Plot_Graph
 
         if source_type == 'voltage':
-            voltage_value = int(source_value) 
+            voltage_value = float(source_value) 
             voltage = voltage_value
         elif source_type == 'current':
-            current_value = int(source_value) 
+            current_value = float(source_value) 
             current = current_value
-
+        print(voltage_value)
         Plot_Graph = bool(plt_graph)
-
+        print(keithley)
+        keithley.write(f':ROUT:TERM {connection_type}')
+        keithley.write(':SOUR:FUNC VOLT')
+        keithley.write(f':SOUR:VOLT {voltage_value}')
+        keithley.write(f':SOUR:VOLT:ILIM {max_current_limit}')
+        if measurement_type == "current":
+            keithley.write(':SENS:FUNC "CURR"')
+            keithley.write(':SENS:CURR:RANG:AUTO ON')
+        else:
+            keithley.write(':SENS:FUNC "RES"')
+            keithley.write(':SENS:RES:RANG:AUTO ON')
+        keithley.write(':OUTP ON')
+        keithley.write(':INIT')
+        keithley.write('*WAI')
         # Signal the background thread that the value is updated
         plot_event.set()
 
@@ -77,9 +103,12 @@ def background_thread():
             plot = Plot_Graph
 
         if plot:
-            measured_value = random.uniform(0,10)
-            measured_values.append(measured_value)
-            socketio.emit('updateSensorData', {'value': measured_value})
+            try:
+                current = float(keithley.query(':READ?').strip()) * 1e6
+                socketio.emit('updateSensorData', {'value': current})
+            except Exception as e:
+                print(f'Error reading current: {str(e)}')
+
             socketio.sleep(1)
         else:
             socketio.sleep(1)
