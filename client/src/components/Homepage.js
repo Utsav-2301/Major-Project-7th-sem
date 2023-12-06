@@ -153,41 +153,18 @@ const HomePage = () => {
       .catch((error) => console.error("Error:", error));
   }
 
-  const stopPlotting = () =>{
-    fetch("http://localhost:5000/stop-plotting", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          <AlertComponent
-            message={"Error closing the connection"}
-            type={"error"}
-          />;
-          throw new Error("Error closing the connection");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log(data);
-      })
-      .catch((error) => console.error("Error:", error));
-  }
-
   const downloadData = () => {
-    fetch("/download-data")
+    fetch('http://localhost:5000/download-data')
       .then((response) => response.blob())
       .then((blob) => {
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "voltage_data.txt";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = 'data.txt'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       })
-      .catch((error) => console.error("Error:", error));
+      .catch((error) => console.error('Error:', error))
   };
 
   return (
@@ -340,11 +317,11 @@ const HomePage = () => {
           handleClick={() => newConnection()}
           disabled={false}
         />
-        <CustomButton
+        {/* <CustomButton
           text="Stop Plotting"
           handleClick={() => stopPlotting()}
           disabled={false}
-        />
+        /> */}
         <CustomButton
           text="Download Data"
           handleClick={() => downloadData()}

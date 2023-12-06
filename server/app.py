@@ -65,18 +65,22 @@ def receive_data():
         elif source_type == 'current':
             current_value = float(source_value) 
             current = current_value
-        print(voltage_value)
+
         Plot_Graph = bool(plt_graph)
         print(keithley)
         keithley.write(f':ROUT:TERM {connection_type}')
         keithley.write(':SOUR:FUNC VOLT')
         keithley.write(f':SOUR:VOLT {voltage_value}')
         keithley.write(f':SOUR:VOLT:ILIM {max_current_limit}')
+        print(measurement_type,'\n')
         if measurement_type == "current":
+            print("current is getting measured")
             keithley.write(':SENS:FUNC "CURR"')
+            keithley.write(':SENSE:CURR:UNIT AMP')
             keithley.write(':SENS:CURR:RANG:AUTO ON')
-        else:
-            keithley.write(':SENS:FUNC "RES"')
+        elif measurement_type == "resistance":
+            print("resistance is getting measured")
+            keithley.write(':SENSE:CURR:UNIT OHM')
             keithley.write(':SENS:RES:RANG:AUTO ON')
         keithley.write(':OUTP ON')
         keithley.write(':INIT')
@@ -89,16 +93,42 @@ def receive_data():
         print(f'Error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+# def background_thread():
+#     count = 0
+#     while True:
+#         plot_event.wait()
+#         with thread_lock:
+#             plot = Plot_Graph
+
+#         if plot:
+#             try:
+#                 value = float(keithley.query(':READ?').strip())
+#                 measured_values.append([count,voltage,value])
+#                 count+=1
+#                 socketio.emit('updateSensorData', {'value': value})
+#             except Exception as e:
+#                 print(f'Error reading current: {str(e)}')
+
+#             socketio.sleep(1)
+#         else:
+#             socketio.sleep(1)
+stop_thread = False  # Flag to indicate whether the thread should stop
+
 def background_thread():
-    while True:
+    count = 0
+    global stop_thread  # Declare global variable
+
+    while not stop_thread:
         plot_event.wait()
         with thread_lock:
             plot = Plot_Graph
 
         if plot:
             try:
-                current = float(keithley.query(':READ?').strip()) * 1e6
-                socketio.emit('updateSensorData', {'value': current})
+                value = float(keithley.query(':READ?').strip())
+                measured_values.append([count, voltage, value])
+                count += 1
+                socketio.emit('updateSensorData', {'value': value})
             except Exception as e:
                 print(f'Error reading current: {str(e)}')
 
@@ -117,20 +147,14 @@ def disconnect_keithley():
     except Exception as e:
         return {'error': str(e)}
 
-@app.route('/stop-plotting', methods=['POST'])
-def stop_websocket():
-    try:
-        socketio.stop()
-        return jsonify({'message': 'WebSocket connection stopped successfully'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/download-data', methods=['GET'])
 def download_data():
-    with open('voltage_data.txt', 'w', newline='') as file:
+    print("entering download data")
+    with open('data.txt', 'w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerows([[measured_value] for measured_value in measured_values])
-    return send_file('voltage_data.txt', as_attachment=True)
+        print("these are the measured values:",measured_values)
+        writer.writerows(measured_values)
+    return send_file('data.txt', as_attachment=True,mimetype='text/csv')
 
 
 @socketio.on('connect')
