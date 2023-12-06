@@ -141,6 +141,7 @@ def disconnect_keithley():
     global rm
     try:
         if 'keithley' in globals():
+            plot = False
             keithley.close()
             rm.close()
         return {'message': 'Disconnected successfully'}
