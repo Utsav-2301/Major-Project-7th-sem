@@ -79,11 +79,15 @@ def receive_data():
         keithley.write(':SOUR:FUNC VOLT')
         keithley.write(f':SOUR:VOLT {voltage_value}')
         keithley.write(f':SOUR:VOLT:ILIM {max_current_limit}')
+        print(measurement_type,'\n')
         if measurement_type == "current":
+            print("current is getting measured")
             keithley.write(':SENS:FUNC "CURR"')
+            keithley.write(':SENSE:CURR:UNIT AMP')
             keithley.write(':SENS:CURR:RANG:AUTO ON')
-        else:
-            keithley.write(':SENS:FUNC "RES"')
+        elif measurement_type == "resistance":
+            print("resistance is getting measured")
+            keithley.write(':SENSE:CURR:UNIT OHM')
             keithley.write(':SENS:RES:RANG:AUTO ON')
         keithley.write(':OUTP ON')
         keithley.write(':INIT')
@@ -104,7 +108,7 @@ def background_thread():
 
         if plot:
             try:
-                current = float(keithley.query(':READ?').strip()) * 1e6
+                current = float(keithley.query(':READ?').strip())
                 socketio.emit('updateSensorData', {'value': current})
             except Exception as e:
                 print(f'Error reading current: {str(e)}')
