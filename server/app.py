@@ -29,8 +29,7 @@ def connect_keithley():
         print('Trying to make post request')
         data = request.get_json()
         ip_address = data.get('ip_address')
-        print(ip_address,'\n')
-        ## TO ADD: Keithley IP connection script 
+        print(ip_address,'\n') 
         rm = pyvisa.ResourceManager()
         keithley_resource_name = f'TCPIP0::{ip_address}::inst0::INSTR'
         global keithley

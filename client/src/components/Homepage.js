@@ -13,6 +13,7 @@ import {
   ThemeProvider,
   createTheme,
 } from "@mui/material";
+import AlertComponent from "./AlertComponent";
 import CustomButton from "./CustomButton";
 import ChartComponent from "./ChartComponent";
 
@@ -81,12 +82,14 @@ const HomePage = () => {
     })
       .then((response) => {
         if (!response.ok) {
+          <AlertComponent message={"Error establishing a connection"} type={"error"} />;
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         return response.json();
       })
       .then((data) => {
         console.log(data);
+        <AlertComponent message={data.message} type={'success'}/>
         setShowSelectOptions(true);
       })
       .catch((error) => console.error("Error:", error));
@@ -109,12 +112,17 @@ const HomePage = () => {
     })
       .then((response) => {
         if (!response.ok) {
+          <AlertComponent
+            message={"Error sending request"}
+            type={"error"}
+          />;
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         return response.json();
       })
       .then((data) => {
         console.log(data);
+        <AlertComponent message={data.message} type={"success"} />;
         setChartVisible(true);
       })
       .catch((error) => console.error("Error:", error));
@@ -129,6 +137,10 @@ const HomePage = () => {
     })
       .then((response) => {
         if (!response.ok) {
+          <AlertComponent
+            message={"Error establishing a new connection"}
+            type={"error"}
+          />;
           throw new Error('Error disconnecting and starting a new plot');
         }
         return response.json();
@@ -150,6 +162,10 @@ const HomePage = () => {
     })
       .then((response) => {
         if (!response.ok) {
+          <AlertComponent
+            message={"Error closing the connection"}
+            type={"error"}
+          />;
           throw new Error("Error closing the connection");
         }
         return response.json();
